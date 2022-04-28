@@ -1,0 +1,68 @@
+import requests
+import re
+import pandas as pd
+
+#ask for the name of the company you want to see jobs for
+company_name = input("What company do you want to apply for? ")
+url = 'https://boards.greenhouse.io/v1/boards/{}/jobs'.format(company_name)
+
+#record and print the API response
+response = requests.get(url)
+print(response)
+
+#save the list of dictionaries
+all_jobs = response.json()
+
+#remove the outer layer, final complete list of dictionaries
+results_clean = (all_jobs['jobs'])
+print(results_clean)
+
+#ask for which job title they want to look for
+keyword_job_search = input("What job are you looking for? ")
+
+#save in a list all job titles that match with the keyword search
+all_titles = [sub['title'] for sub in results_clean]
+filtered_titles = []
+for title in all_titles:
+    if keyword_job_search in title.lower():
+        filtered_titles.append(title)
+print(filtered_titles)
+
+#filter the list of dictionaries based on the titles saved above
+filter_dict = list(filter(lambda d: d['title'] in filtered_titles, results_clean))
+print(filter_dict)
+
+#get the urls of all the filtered jobs
+filtered_url = [sub['absolute_url'] for sub in filter_dict]
+print(filtered_url)
+
+numbers = []
+for word in filtered_url:
+    word = re.findall('[0-9]+', word)
+    print(word)
+    numbers.append(word)
+
+flat_list = [item for sublist in numbers for item in sublist]
+print(flat_list)
+
+job_urls = []
+for job_id in flat_list:
+    job_id_url = 'https://boards-api.greenhouse.io/v1/boards/{}/jobs/{}'.format(company_name,job_id)
+    job_urls.append(job_id_url)
+
+print(job_urls)
+
+for address in job_urls:
+    response = requests.get(address)
+    print(response)
+    job_desc = response.json()
+    print(job_desc)
+
+your_keys = ['absolute_url','title','content']
+
+for job in job_desc:
+    dict_you_want = {your_key:job_desc[your_key] for your_key in your_keys}
+
+print(dict_you_want)
+
+#df_jobs = pd.DataFrame(job_desc)
